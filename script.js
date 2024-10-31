@@ -40,6 +40,7 @@ sendButton.onclick = () => {
         saveMessage(msgObj);
         appendMessage(msgObj);
         messageInput.value = '';
+        typingIndicator.style.display = 'none'; // Hide typing indicator after sending
     }
 };
 
@@ -54,6 +55,15 @@ messageInput.addEventListener('blur', () => {
     typingIndicator.style.display = 'none';
 });
 
+// Listen for storage events to update messages in other tabs
+window.addEventListener('storage', (event) => {
+    if (event.key === 'messages') {
+        const messages = JSON.parse(event.newValue);
+        chatBox.innerHTML = ''; // Clear chat box
+        messages.forEach(msg => appendMessage(msg));
+    }
+});
+
 function appendMessage(data) {
     const messageElement = document.createElement('div');
     messageElement.className = 'chat-message';
@@ -62,9 +72,19 @@ function appendMessage(data) {
     chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
 }
 
-// Hide typing indicator after sending a message
-messageInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        typingIndicator.style.display = 'none';
+// Update storage when new messages are sent
+sendButton.onclick = () => {
+    const message = messageInput.value;
+    if (message) {
+        const msgObj = { user: username, text: message };
+        saveMessage(msgObj);
+        
+        // Trigger storage event for other tabs
+        localStorage.setItem('messages', JSON.stringify(JSON.parse(localStorage.getItem('messages')) || []).concat(msgObj));
+        
+        appendMessage(msgObj);
+        messageInput.value = '';
+        typingIndicator.style.display = 'none'; // Hide typing indicator after sending
     }
-});
+};
+
